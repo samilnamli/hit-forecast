@@ -1,0 +1,15 @@
+dataset,method,MASE,MSE,sMAPE,selection_acc
+synthetic_regime_switch::test,single:dummy_trend,2.46593,26.0039,60.97532,
+synthetic_regime_switch::test,single:dummy_spiky,1.60655,15.9935,43.03508,
+synthetic_regime_switch::test,single:dummy_season,3.13351,45.92604,101.68282,
+synthetic_regime_switch::test,single:dummy_snaive,1.76693,17.97991,48.64285,
+synthetic_regime_switch::test,ensemble:mean,1.79995,19.88681,49.61433,
+synthetic_regime_switch::test,ensemble:weighted,1.75321,18.76319,47.95101,
+synthetic_regime_switch::test,ensemble:bma,1.71959,17.79255,46.74685,
+synthetic_regime_switch::test,routing:random,2.2366,26.34137,63.51022,
+synthetic_regime_switch::test,routing:weighted_random,2.09508,23.88835,57.89296,
+synthetic_regime_switch::test,oracle,1.37994,13.29085,37.60283,
+synthetic_regime_switch::test,hit_forecast:hard,1.50933,14.1752,41.94789,0.7705
+synthetic_regime_switch::test,hit_forecast:soft,1.52698,14.93197,42.2237,
+synthetic_regime_switch::test,pooled_mlp:hard,1.60655,15.9935,43.03508,0.6545
+synthetic_regime_switch::test,pooled_mlp:soft,1.66831,16.92686,45.02015,

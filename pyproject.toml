@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hit-forecast"
+version = "0.2.0"
+description = "HiT-Forecast: Hierarchical Transformer Routing over frozen time-series foundation models, with a contamination-aware GIFT-Eval protocol."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [
+    { name = "HiT-Forecast authors" },
+]
+dependencies = [
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "torch>=2.1",
+    "pyyaml>=6.0",
+    "tqdm>=4.66",
+    "einops>=0.7",
+]
+
+[project.optional-dependencies]
+# GIFT-Eval data loading + gluonts evaluation utilities.
+gifteval = [
+    "gluonts>=0.15",
+    "datasets>=2.19",
+    "python-dotenv>=1.0",
+    "pyarrow>=15",
+    "toolz>=0.12",
+]
+# Foundation-model experts. These pull heavy deps; install on the GPU host.
+experts = [
+    "chronos-forecasting>=1.5",
+    "uni2ts>=1.2",
+    "timesfm[torch]>=1.2",
+    "tirex",
+    "huggingface_hub>=0.24",
+    "safetensors>=0.4",
+    "accelerate>=0.30",
+]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.5",
+]
+
+[project.scripts]
+hitf-cache = "hit_forecast.cli.cache_features:main"
+hitf-diagnose = "hit_forecast.cli.diagnostics:main"
+hitf-train = "hit_forecast.cli.train_router:main"
+hitf-eval = "hit_forecast.cli.evaluate:main"
+hitf-synthetic = "hit_forecast.cli.run_synthetic:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]

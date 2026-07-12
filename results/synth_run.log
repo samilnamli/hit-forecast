@@ -1,0 +1,49 @@
+[23:06:38] INFO hit_forecast.cli._common: Caching synthetic_regime_switch::test (2500 windows)
+cache:synthetic_regime_switch::test:   0%|          | 0/5 [00:00<?, ?it/s]cache:synthetic_regime_switch::test:  20%|██        | 1/5 [00:06<00:25,  6.39s/it]cache:synthetic_regime_switch::test:  40%|████      | 2/5 [00:13<00:19,  6.52s/it]cache:synthetic_regime_switch::test:  60%|██████    | 3/5 [00:20<00:13,  6.85s/it]cache:synthetic_regime_switch::test:  80%|████████  | 4/5 [00:26<00:06,  6.68s/it]cache:synthetic_regime_switch::test: 100%|██████████| 5/5 [00:32<00:00,  6.20s/it]cache:synthetic_regime_switch::test: 100%|██████████| 5/5 [00:32<00:00,  6.40s/it]
+[23:07:11] INFO hit_forecast.features.cache: Wrote cache: results/synthetic_regime_switch/feature_cache/synthetic_regime_switch_test (N=2500, K=4)
+[23:07:11] INFO hit_forecast.cli._common: Caching synthetic_regime_switch::test (2000 windows)
+cache:synthetic_regime_switch::test:   0%|          | 0/4 [00:00<?, ?it/s]cache:synthetic_regime_switch::test:  25%|██▌       | 1/4 [00:06<00:18,  6.03s/it]cache:synthetic_regime_switch::test:  50%|█████     | 2/4 [00:12<00:12,  6.36s/it]cache:synthetic_regime_switch::test:  75%|███████▌  | 3/4 [00:20<00:07,  7.04s/it]cache:synthetic_regime_switch::test: 100%|██████████| 4/4 [00:26<00:00,  6.63s/it]cache:synthetic_regime_switch::test: 100%|██████████| 4/4 [00:26<00:00,  6.62s/it]
+[23:07:39] INFO hit_forecast.features.cache: Wrote cache: results/synthetic_regime_switch/feature_cache/synthetic_regime_switch_test (N=2000, K=4)
+/home/asami/iclr/hit-forecast/src/hit_forecast/models/router.py:56: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  return nn.TransformerEncoder(layer, num_layers=layers)
+/home/asami/iclr/hit-forecast/src/hit_forecast/train/trainer.py:83: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
+[23:07:58] INFO hit_forecast.train.trainer: epoch 0 train_loss=3.2446 val_E[MASE]=2.1494
+[23:08:13] INFO hit_forecast.train.trainer: epoch 1 train_loss=3.0963 val_E[MASE]=1.9856
+[23:08:28] INFO hit_forecast.train.trainer: epoch 2 train_loss=2.9541 val_E[MASE]=1.8264
+[23:08:44] INFO hit_forecast.train.trainer: epoch 3 train_loss=2.9375 val_E[MASE]=1.8615
+[23:08:58] INFO hit_forecast.train.trainer: epoch 4 train_loss=2.9270 val_E[MASE]=1.8597
+[23:09:16] INFO hit_forecast.train.trainer: epoch 5 train_loss=2.9261 val_E[MASE]=1.8680
+[23:09:33] INFO hit_forecast.train.trainer: epoch 6 train_loss=2.9210 val_E[MASE]=1.8453
+[23:09:48] INFO hit_forecast.train.trainer: epoch 7 train_loss=2.9108 val_E[MASE]=1.8518
+[23:09:56] INFO hit_forecast.train.trainer: epoch 8 train_loss=2.8714 val_E[MASE]=1.8358
+[23:10:04] INFO hit_forecast.train.trainer: epoch 9 train_loss=2.8429 val_E[MASE]=1.8330
+[23:10:11] INFO hit_forecast.train.trainer: epoch 10 train_loss=2.8076 val_E[MASE]=1.7874
+[23:10:20] INFO hit_forecast.train.trainer: epoch 11 train_loss=2.7759 val_E[MASE]=1.8278
+[23:10:28] INFO hit_forecast.train.trainer: epoch 12 train_loss=2.7630 val_E[MASE]=1.7947
+[23:10:36] INFO hit_forecast.train.trainer: epoch 13 train_loss=2.7283 val_E[MASE]=1.7679
+[23:10:44] INFO hit_forecast.train.trainer: epoch 14 train_loss=2.7122 val_E[MASE]=1.7361
+[23:10:52] INFO hit_forecast.train.trainer: epoch 15 train_loss=2.6773 val_E[MASE]=1.7290
+[23:11:00] INFO hit_forecast.train.trainer: epoch 16 train_loss=2.6632 val_E[MASE]=1.7417
+[23:11:08] INFO hit_forecast.train.trainer: epoch 17 train_loss=2.6528 val_E[MASE]=1.7249
+[23:11:16] INFO hit_forecast.train.trainer: epoch 18 train_loss=2.6476 val_E[MASE]=1.7296
+[23:11:24] INFO hit_forecast.train.trainer: epoch 19 train_loss=2.6504 val_E[MASE]=1.7296
+[23:11:25] INFO hit_forecast.train.trainer: epoch 0 train_loss=3.3492 val_E[MASE]=2.2841
+[23:11:25] INFO hit_forecast.train.trainer: epoch 1 train_loss=3.3346 val_E[MASE]=2.2708
+[23:11:25] INFO hit_forecast.train.trainer: epoch 2 train_loss=3.3062 val_E[MASE]=2.2484
+[23:11:25] INFO hit_forecast.train.trainer: epoch 3 train_loss=3.2635 val_E[MASE]=2.2153
+[23:11:25] INFO hit_forecast.train.trainer: epoch 4 train_loss=3.2058 val_E[MASE]=2.1672
+[23:11:25] INFO hit_forecast.train.trainer: epoch 5 train_loss=3.1310 val_E[MASE]=2.0994
+[23:11:25] INFO hit_forecast.train.trainer: epoch 6 train_loss=3.0444 val_E[MASE]=2.0125
+[23:11:26] INFO hit_forecast.train.trainer: epoch 7 train_loss=2.9670 val_E[MASE]=1.9213
+[23:11:26] INFO hit_forecast.train.trainer: epoch 8 train_loss=2.9327 val_E[MASE]=1.8580
+[23:11:26] INFO hit_forecast.train.trainer: epoch 9 train_loss=2.9288 val_E[MASE]=1.8526
+[23:11:26] INFO hit_forecast.train.trainer: epoch 10 train_loss=2.9266 val_E[MASE]=1.8702
+[23:11:26] INFO hit_forecast.train.trainer: epoch 11 train_loss=2.9250 val_E[MASE]=1.8822
+[23:11:26] INFO hit_forecast.train.trainer: epoch 12 train_loss=2.9256 val_E[MASE]=1.8788
+[23:11:26] INFO hit_forecast.train.trainer: epoch 13 train_loss=2.9257 val_E[MASE]=1.8729
+[23:11:27] INFO hit_forecast.train.trainer: epoch 14 train_loss=2.9245 val_E[MASE]=1.8752
+[23:11:27] INFO hit_forecast.train.trainer: epoch 15 train_loss=2.9247 val_E[MASE]=1.8743
+[23:11:27] INFO hit_forecast.train.trainer: epoch 16 train_loss=2.9250 val_E[MASE]=1.8756
+[23:11:27] INFO hit_forecast.train.trainer: epoch 17 train_loss=2.9246 val_E[MASE]=1.8758
+[23:11:27] INFO hit_forecast.train.trainer: Early stopping at epoch 17 (best val E[MASE]=1.8526)

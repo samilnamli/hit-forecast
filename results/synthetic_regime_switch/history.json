@@ -1,0 +1,198 @@
+{
+  "hit": [
+    {
+      "epoch": 0,
+      "train_loss": 3.2445504489474826,
+      "val_expected_mase": 2.149408203125
+    },
+    {
+      "epoch": 1,
+      "train_loss": 3.096302160474989,
+      "val_expected_mase": 1.985625244140625
+    },
+    {
+      "epoch": 2,
+      "train_loss": 2.954053364859687,
+      "val_expected_mase": 1.82644873046875
+    },
+    {
+      "epoch": 3,
+      "train_loss": 2.9374793663024903,
+      "val_expected_mase": 1.8615482177734375
+    },
+    {
+      "epoch": 4,
+      "train_loss": 2.926992364671495,
+      "val_expected_mase": 1.85972265625
+    },
+    {
+      "epoch": 5,
+      "train_loss": 2.926110947079129,
+      "val_expected_mase": 1.8680357666015626
+    },
+    {
+      "epoch": 6,
+      "train_loss": 2.9209629700978597,
+      "val_expected_mase": 1.8452850341796876
+    },
+    {
+      "epoch": 7,
+      "train_loss": 2.9108359576331244,
+      "val_expected_mase": 1.8517982177734376
+    },
+    {
+      "epoch": 8,
+      "train_loss": 2.871418500688341,
+      "val_expected_mase": 1.83576318359375
+    },
+    {
+      "epoch": 9,
+      "train_loss": 2.8429498070610895,
+      "val_expected_mase": 1.8329539794921874
+    },
+    {
+      "epoch": 10,
+      "train_loss": 2.807577502568563,
+      "val_expected_mase": 1.7873580322265625
+    },
+    {
+      "epoch": 11,
+      "train_loss": 2.7759131931728787,
+      "val_expected_mase": 1.8278172607421874
+    },
+    {
+      "epoch": 12,
+      "train_loss": 2.762999864154392,
+      "val_expected_mase": 1.7947091064453125
+    },
+    {
+      "epoch": 13,
+      "train_loss": 2.728297952863905,
+      "val_expected_mase": 1.7679300537109375
+    },
+    {
+      "epoch": 14,
+      "train_loss": 2.712174210442437,
+      "val_expected_mase": 1.7361448974609375
+    },
+    {
+      "epoch": 15,
+      "train_loss": 2.6772695053948294,
+      "val_expected_mase": 1.729027099609375
+    },
+    {
+      "epoch": 16,
+      "train_loss": 2.6631909489101835,
+      "val_expected_mase": 1.741716552734375
+    },
+    {
+      "epoch": 17,
+      "train_loss": 2.6527554285261368,
+      "val_expected_mase": 1.7248880615234374
+    },
+    {
+      "epoch": 18,
+      "train_loss": 2.6475515817006428,
+      "val_expected_mase": 1.729618408203125
+    },
+    {
+      "epoch": 19,
+      "train_loss": 2.6503563056521946,
+      "val_expected_mase": 1.7296298828125
+    }
+  ],
+  "pooled": [
+    {
+      "epoch": 0,
+      "train_loss": 3.349220587624444,
+      "val_expected_mase": 2.284145751953125
+    },
+    {
+      "epoch": 1,
+      "train_loss": 3.3346102646721736,
+      "val_expected_mase": 2.270776611328125
+    },
+    {
+      "epoch": 2,
+      "train_loss": 3.306246240403917,
+      "val_expected_mase": 2.248426025390625
+    },
+    {
+      "epoch": 3,
+      "train_loss": 3.263474701563517,
+      "val_expected_mase": 2.215300537109375
+    },
+    {
+      "epoch": 4,
+      "train_loss": 3.2057917075686984,
+      "val_expected_mase": 2.167227294921875
+    },
+    {
+      "epoch": 5,
+      "train_loss": 3.130959302266439,
+      "val_expected_mase": 2.09935546875
+    },
+    {
+      "epoch": 6,
+      "train_loss": 3.0443511407640247,
+      "val_expected_mase": 2.01252734375
+    },
+    {
+      "epoch": 7,
+      "train_loss": 2.9669990832010904,
+      "val_expected_mase": 1.921324951171875
+    },
+    {
+      "epoch": 8,
+      "train_loss": 2.9327059400346545,
+      "val_expected_mase": 1.8580352783203125
+    },
+    {
+      "epoch": 9,
+      "train_loss": 2.928814552307129,
+      "val_expected_mase": 1.852587890625
+    },
+    {
+      "epoch": 10,
+      "train_loss": 2.9266034656100803,
+      "val_expected_mase": 1.8702440185546876
+    },
+    {
+      "epoch": 11,
+      "train_loss": 2.9249681896633573,
+      "val_expected_mase": 1.8822257080078124
+    },
+    {
+      "epoch": 12,
+      "train_loss": 2.9256039310031468,
+      "val_expected_mase": 1.878812255859375
+    },
+    {
+      "epoch": 13,
+      "train_loss": 2.9256589620378284,
+      "val_expected_mase": 1.8728616943359375
+    },
+    {
+      "epoch": 14,
+      "train_loss": 2.924515474319458,
+      "val_expected_mase": 1.875196044921875
+    },
+    {
+      "epoch": 15,
+      "train_loss": 2.9247331773969862,
+      "val_expected_mase": 1.87432177734375
+    },
+    {
+      "epoch": 16,
+      "train_loss": 2.924986565060086,
+      "val_expected_mase": 1.875634765625
+    },
+    {
+      "epoch": 17,
+      "train_loss": 2.9246462817721897,
+      "val_expected_mase": 1.87577490234375
+    }
+  ],
+  "hit_best_val_expected_mase": 1.7248880615234374,
+  "pooled_best_val_expected_mase": 1.852587890625
+}

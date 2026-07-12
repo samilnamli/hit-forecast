@@ -1,0 +1,31 @@
+# Contrast experiment (Exp 3): the OLD leaking pool (3/4 experts tagged
+# testdata_leakage = Yes) on the SAME GIFT-Eval configs. Compared against
+# gifteval_main_clean, this quantifies how contamination collapses the routing
+# signal (Phase-0 diagnostics) and inflates absolute metrics.
+defaults: _gifteval_base.yaml
+
+name: gifteval_contaminated
+cache_root: feature_cache/gifteval_contaminated
+
+experts:
+  - kind: chronos
+    name: chronos-t5-small
+    model_id: amazon/chronos-t5-small     # leakage = Yes
+    dtype: bfloat16
+    feature_source: auto
+  - kind: chronos
+    name: chronos-bolt-base
+    model_id: amazon/chronos-bolt-base     # leakage = Yes
+    dtype: bfloat16
+    feature_source: stat
+    stat_hidden: 96
+  - kind: timesfm
+    name: timesfm-1.0
+    model_id: google/timesfm-1.0-200m-pytorch   # leakage = Yes
+    feature_source: stat
+    stat_hidden: 128
+  - kind: moirai
+    name: moirai-base
+    model_id: Salesforce/moirai-1.1-R-base       # leakage = No
+    feature_source: stat
+    stat_hidden: 112

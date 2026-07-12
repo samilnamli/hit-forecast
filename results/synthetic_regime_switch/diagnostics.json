@@ -1,0 +1,24 @@
+{
+  "n_windows": 2500,
+  "n_experts": 4,
+  "expert_names": [
+    "dummy_trend",
+    "dummy_spiky",
+    "dummy_season",
+    "dummy_snaive"
+  ],
+  "win_rate": {
+    "dummy_trend": 0.2088,
+    "dummy_spiky": 0.6648,
+    "dummy_season": 0.1004,
+    "dummy_snaive": 0.026
+  },
+  "win_rate_entropy_norm": 0.6666311045206675,
+  "rel_margin_median": 0.21330734425649883,
+  "rel_margin_mean": 0.50054576812047,
+  "abs_margin_median": 0.18253882229328156,
+  "oracle_mase": 1.3808067547768355,
+  "best_single_mase": 1.6032013943731784,
+  "oracle_gain_vs_best_single": 0.13871909067500224,
+  "gate_pass": true
+}

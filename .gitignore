@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv*/
+.env
+
+# Datasets, feature caches, checkpoints (never commit large blobs)
+data/
+**/feature_cache/
+*.arrow
+*.parquet
+*.safetensors
+*.ckpt
+*.pt
+*.npy
+*.npz
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Keep small committed demo evidence under results/ (metrics.csv/json, diagnostics.json,
+# history.json, *.log) but ignore the heavy per-run artifacts handled above.

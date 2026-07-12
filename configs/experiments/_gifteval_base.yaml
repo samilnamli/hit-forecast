@@ -1,0 +1,68 @@
+# Shared GIFT-Eval settings (datasets, router, training). Concrete experiments
+# set `defaults: _gifteval_base.yaml` and add `name` + `experts`.
+#
+# Datasets use GIFT-Eval config names (dataset[/freq]) and terms short|medium|long.
+# `train` splits are sliced from GIFT-Eval training series (no test overlap);
+# `test` splits use GIFT-Eval held-out horizons. Expand this list to cover more
+# of the 98 configs for the fullest table; this set spans all 7 domains.
+
+seed: 0
+cache_batch_size: 128
+val_frac: 0.1
+
+router:
+  d: 256
+  nhead: 4
+  stage1_layers: 2
+  stage2_layers: 2
+  ffn: 512
+  dropout: 0.1
+  share_stage1: true
+  cross_attention: true
+  max_patches: 1024
+
+train:
+  lr: 1.0e-4
+  weight_decay: 1.0e-2
+  warmup_steps: 500
+  max_epochs: 100
+  batch_size: 256
+  grad_clip: 1.0
+  patience: 20
+  amp: true
+  loss:
+    lambda_mase: 1.0
+    lambda_hard: 0.3
+    lambda_soft: 0.5
+    tau: 1.5
+    label_smoothing: 0.05
+
+datasets:
+  train:
+    - {source: gifteval, name: electricity/H, term: short, split: train, max_windows: 6000}
+    - {source: gifteval, name: solar/H, term: short, split: train, max_windows: 6000}
+    - {source: gifteval, name: jena_weather/D, term: short, split: train, max_windows: 6000}
+    - {source: gifteval, name: kdd_cup_2018/D, term: short, split: train, max_windows: 6000}
+    - {source: gifteval, name: m4_hourly, term: short, split: train, max_windows: 6000}
+    - {source: gifteval, name: m4_daily, term: short, split: train, max_windows: 6000}
+    - {source: gifteval, name: hospital, term: short, split: train, max_windows: 4000}
+    - {source: gifteval, name: car_parts, term: short, split: train, max_windows: 4000}
+    - {source: gifteval, name: restaurant, term: short, split: train, max_windows: 4000}
+    - {source: gifteval, name: loop_seattle/D, term: short, split: train, max_windows: 6000}
+    - {source: gifteval, name: sz_taxi/H, term: short, split: train, max_windows: 6000}
+    - {source: gifteval, name: bizitobs_l2c/H, term: short, split: train, max_windows: 4000}
+    - {source: gifteval, name: bitbrains_fast_storage/H, term: short, split: train, max_windows: 4000}
+  test:
+    - {source: gifteval, name: electricity/H, term: short, split: test}
+    - {source: gifteval, name: solar/H, term: short, split: test}
+    - {source: gifteval, name: jena_weather/D, term: short, split: test}
+    - {source: gifteval, name: kdd_cup_2018/D, term: short, split: test}
+    - {source: gifteval, name: m4_hourly, term: short, split: test}
+    - {source: gifteval, name: m4_daily, term: short, split: test}
+    - {source: gifteval, name: hospital, term: short, split: test}
+    - {source: gifteval, name: car_parts, term: short, split: test}
+    - {source: gifteval, name: restaurant, term: short, split: test}
+    - {source: gifteval, name: loop_seattle/D, term: short, split: test}
+    - {source: gifteval, name: sz_taxi/H, term: short, split: test}
+    - {source: gifteval, name: bizitobs_l2c/H, term: short, split: test}
+    - {source: gifteval, name: bitbrains_fast_storage/H, term: short, split: test}

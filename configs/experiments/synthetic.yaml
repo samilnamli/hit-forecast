@@ -1,0 +1,39 @@
+# Synthetic regime-switch experiment (draft Table I). Runs anywhere, no downloads.
+# Equivalent to `hitf-synthetic`; provided as a config for the unified runner.
+name: synthetic_regime_switch
+cache_root: feature_cache/synthetic
+cache_batch_size: 512
+seed: 0
+val_frac: 0.1
+
+experts:
+  - {kind: dummy_trend}
+  - {kind: dummy_spiky}
+  - {kind: dummy_season}
+  - {kind: dummy_snaive}
+
+datasets:
+  train:
+    - {source: synthetic, name: synthetic_regime_switch, split: train, n_windows: 8000, L: 192, H: 96, m: 24, seed: 1}
+  test:
+    - {source: synthetic, name: synthetic_regime_switch, split: test, n_windows: 2000, L: 192, H: 96, m: 24, seed: 2}
+
+router:
+  d: 128
+  nhead: 4
+  stage1_layers: 2
+  stage2_layers: 2
+  ffn: 256
+  dropout: 0.1
+  share_stage1: true
+  cross_attention: true
+
+train:
+  lr: 3.0e-4
+  weight_decay: 1.0e-2
+  warmup_steps: 100
+  max_epochs: 40
+  batch_size: 256
+  patience: 8
+  amp: false
+  loss: {lambda_mase: 1.0, lambda_hard: 0.3, lambda_soft: 0.5, tau: 1.5, label_smoothing: 0.05}

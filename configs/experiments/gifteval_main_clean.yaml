@@ -1,0 +1,29 @@
+# Main results (Exp 2): clean, diverse expert pool on GIFT-Eval.
+# All experts are tagged testdata_leakage = No on the GIFT-Eval leaderboard,
+# resolving the colleague's contamination + weak-signal failure mode.
+defaults: _gifteval_base.yaml
+
+name: gifteval_main_clean
+cache_root: feature_cache/gifteval_main_clean
+
+experts:
+  - kind: chronos
+    name: chronos-2
+    model_id: amazon/chronos-2
+    dtype: bfloat16
+    feature_source: auto        # try frozen encoder states, fall back to stat patches
+  - kind: moirai
+    name: moirai-base
+    model_id: Salesforce/moirai-1.1-R-base
+    feature_source: stat
+    stat_hidden: 96
+  - kind: timesfm
+    name: timesfm-2.5
+    model_id: google/timesfm-2.5-200m-pytorch
+    feature_source: stat
+    stat_hidden: 128
+  - kind: tirex
+    name: tirex
+    model_id: NX-AI/TiRex
+    feature_source: stat
+    stat_hidden: 112

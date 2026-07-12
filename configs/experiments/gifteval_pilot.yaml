@@ -1,0 +1,20 @@
+# Pilot (step 3): small, fast clean-pool run on 3 diverse domains to validate the
+# GPU path (feature extraction, caching, training) before the full table.
+defaults: gifteval_main_clean.yaml
+
+name: gifteval_pilot
+cache_root: feature_cache/gifteval_pilot
+
+datasets:
+  train:
+    - {source: gifteval, name: electricity/H, term: short, split: train, max_windows: 3000}
+    - {source: gifteval, name: bizitobs_l2c/H, term: short, split: train, max_windows: 3000}
+    - {source: gifteval, name: m4_hourly, term: short, split: train, max_windows: 3000}
+  test:
+    - {source: gifteval, name: electricity/H, term: short, split: test}
+    - {source: gifteval, name: bizitobs_l2c/H, term: short, split: test}
+    - {source: gifteval, name: m4_hourly, term: short, split: test}
+
+train:
+  max_epochs: 40
+  patience: 10
