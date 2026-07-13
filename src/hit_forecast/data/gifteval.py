@@ -162,9 +162,16 @@ def load_gifteval_windows(
     Dataset, Term = _require_gift_eval()
     ds = Dataset(name=name, term=Term(term), to_univariate=False)
     H = int(ds.prediction_length)
-    L = int(context_length) if context_length else 2 * H
     freq = ds.freq
-    m = _season_for(freq, L)
+    # Prefer L=2H; for short GiftEval series (e.g. car_parts monthly) fall back.
+    L_candidates = []
+    if context_length is not None:
+        L_candidates.append(int(context_length))
+    L_candidates.extend([2 * H, H, max(H // 2, 8), max(4, H // 4)])
+    # unique, preserve order
+    seen = set()
+    L_candidates = [L for L in L_candidates if not (L in seen or seen.add(L))]
+
     meta_base = {
         "dataset": name,
         "config": f"{name}/{freq}/{term}",
@@ -174,45 +181,86 @@ def load_gifteval_windows(
     }
 
     windows: list[Window] = []
-    if split == "train":
-        series_iter = _iter_series(ds.training_dataset)
-        per_series = None if max_windows is None else max(1, max_windows // 50)
-        for si, arr in enumerate(series_iter):
-            if max_series is not None and si >= max_series:
-                break
-            if arr is None or np.asarray(arr).size == 0:
-                continue
-            for ch in channels_from_2d(arr):
-                if ch.size < L + H:
-                    continue
-                windows.extend(
-                    sliding_windows(
-                        ch,
-                        L=L,
-                        H=H,
-                        m=m,
-                        stride=H,
-                        meta=meta_base,
-                        max_windows=per_series,
-                    )
+    used_L = L_candidates[0]
+    last_err = None
+    for L in L_candidates:
+        m = _season_for(freq, L)
+        try:
+            if split == "train":
+                windows = _windows_from_train(
+                    ds.training_dataset,
+                    L=L,
+                    H=H,
+                    m=m,
+                    meta=meta_base,
+                    max_windows=max_windows,
+                    max_series=max_series,
                 )
-            if max_windows is not None and len(windows) >= max_windows:
-                windows = windows[:max_windows]
-                break
-    elif split == "test":
-        windows = _windows_from_test_data(
-            ds.test_data, L=L, H=H, m=m, meta=meta_base, max_windows=max_windows
-        )
-    else:
-        raise ValueError(f"Unknown split: {split!r}")
+            elif split == "test":
+                windows = _windows_from_test_data(
+                    ds.test_data, L=L, H=H, m=m, meta=meta_base, max_windows=max_windows
+                )
+            else:
+                raise ValueError(f"Unknown split: {split!r}")
+        except Exception as e:  # noqa: BLE001
+            last_err = e
+            _log.warning("GiftEval %s split=%s L=%d failed (%s); trying shorter L",
+                         name, split, L, e)
+            windows = []
+        if windows:
+            used_L = L
+            break
 
     if not windows:
-        raise RuntimeError(
-            f"No windows produced for GiftEval config {name!r} split={split!r}. "
-            f"Check that {os.getenv('GIFT_EVAL')}/{name} exists and series are long "
-            f"enough for L={L}, H={H}."
+        msg = (
+            f"No windows produced for GiftEval config {name!r} split={split!r} "
+            f"(tried L in {L_candidates}, H={H}). "
+            f"Check that {os.getenv('GIFT_EVAL')}/{name} exists and series are long enough."
         )
+        if last_err is not None:
+            raise RuntimeError(msg) from last_err
+        raise RuntimeError(msg)
+
+    if used_L != L_candidates[0]:
+        _log.info("GiftEval %s split=%s: using shortened context L=%d (H=%d)",
+                  name, split, used_L, H)
     return WindowSet(windows=windows, name=meta_base["config"])
+
+
+def _windows_from_train(
+    training_dataset,
+    L: int,
+    H: int,
+    m: int,
+    meta: dict,
+    max_windows: int | None,
+    max_series: int | None,
+) -> list[Window]:
+    windows: list[Window] = []
+    per_series = None if max_windows is None else max(1, max_windows // 50)
+    for si, arr in enumerate(_iter_series(training_dataset)):
+        if max_series is not None and si >= max_series:
+            break
+        if arr is None or np.asarray(arr).size == 0:
+            continue
+        for ch in channels_from_2d(arr):
+            ch = np.asarray(ch).ravel()
+            if ch.size < L + H:
+                continue
+            windows.extend(
+                sliding_windows(
+                    ch,
+                    L=L,
+                    H=H,
+                    m=m,
+                    stride=H,
+                    meta=meta,
+                    max_windows=per_series,
+                )
+            )
+        if max_windows is not None and len(windows) >= max_windows:
+            return windows[:max_windows]
+    return windows
 
 
 def _as_target_array(target) -> np.ndarray | None:

@@ -50,12 +50,23 @@ def cache_entries(entries: list[dict], experts, cache_root: str | Path, device: 
                   batch_size: int = 64, overwrite: bool = False) -> list[FeatureCache]:
     caches = []
     for entry in entries:
-        ws = build_windowset(entry)
+        try:
+            ws = build_windowset(entry)
+        except RuntimeError as e:
+            _log.warning("Skipping GiftEval entry %s: %s", entry.get("name"), e)
+            continue
+        if len(ws) == 0:
+            _log.warning("Skipping empty WindowSet for %s", entry.get("name"))
+            continue
         tag = entry.get("split", "test")
         ws.name = f"{ws.name}::{tag}"
         _log.info("Caching %s (%d windows)", ws.name, len(ws))
         caches.append(build_cache(ws, experts, cache_root, batch_size=batch_size,
                                   overwrite=overwrite))
+    if not caches:
+        raise RuntimeError(
+            "No cache shards were produced. Check GiftEval dataset names / lengths."
+        )
     return caches
 
 
