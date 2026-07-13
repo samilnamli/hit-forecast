@@ -97,7 +97,9 @@ def train_router(
         for feats, masks, mase, _ in dl:
             feats = [torch.nan_to_num(f.to(device)) for f in feats]
             masks = [m.to(device) for m in masks]
-            mase = torch.nan_to_num(mase.to(device), nan=1e6, posinf=1e6, neginf=1e6)
+            mase = torch.nan_to_num(mase.to(device), nan=1.0e6, posinf=1.0e6, neginf=1.0e6)
+            # Finite clip for soft CE / L_mase; sentinel failures collapse to the cap.
+            mase = torch.clamp(mase, min=0.0, max=1.0e3)
             opt.zero_grad(set_to_none=True)
             with torch.autocast(device_type="cuda", enabled=use_amp):
                 logits = model(feats, masks)

@@ -15,6 +15,8 @@ per-position hidden states can be wired later via a forward hook).
 
 from __future__ import annotations
 
+import math
+
 import numpy as np
 
 from ..utils.logging import get_logger
@@ -24,6 +26,16 @@ from . import _features as F
 
 _log = get_logger(__name__)
 
+# TimesFM 2.5 patch size; max_context must be a multiple of this for compile.
+_TIMESFM_PATCH = 32
+
+
+def patch_aligned_context(length: int, patch: int = _TIMESFM_PATCH, cap: int = 2048) -> int:
+    """Smallest patch-aligned context >= length (avoids zero-pad mean corruption)."""
+    length = max(int(length), patch)
+    need = int(math.ceil(length / patch) * patch)
+    return min(need, int(cap))
+
 
 @register_expert("timesfm")
 class TimesFMExpert(ExpertAdapter):
@@ -32,13 +44,14 @@ class TimesFMExpert(ExpertAdapter):
         name: str = "timesfm-2.5",
         model_id: str = "google/timesfm-2.5-200m-pytorch",
         device: str = "cpu",
-        context_length: int = 512,
+        context_length: int = 128,
         max_horizon: int = 256,
         per_core_batch_size: int = 64,
         feature_source: str = "stat",
         stat_patch_len: int = 32,
         stat_hidden: int = 128,
         torch_compile: bool = False,
+        infer_is_positive: bool = True,
     ):
         super().__init__(name=name, device=device)
         self.model_id = model_id
@@ -47,6 +60,7 @@ class TimesFMExpert(ExpertAdapter):
         self.per_core_batch_size = per_core_batch_size
         self.feature_source = feature_source
         self.torch_compile = torch_compile
+        self.infer_is_positive = infer_is_positive
         self._stat_patch_len = stat_patch_len
         self._stat_hidden = stat_hidden
         self._proj = F.make_stat_proj(name, stat_hidden)
@@ -135,11 +149,28 @@ class TimesFMExpert(ExpertAdapter):
             normalize_inputs=True,
             use_continuous_quantile_head=True,
             force_flip_invariance=True,
-            infer_is_positive=False,  # GiftEval has signed / mixed-sign series
+            # Match GiftEval notebook defaults; most clean-pool series are non-negative.
+            infer_is_positive=bool(self.infer_is_positive),
             fix_quantile_crossing=True,
             per_core_batch_size=int(self.per_core_batch_size),
         )
         self._model.compile(cfg)
+
+    def _ensure_context_for_batch(self, inputs: list[np.ndarray]) -> None:
+        """Recompile so max_context ≈ actual L (padding zeros must not dominate mean/std)."""
+        if self._api != "2p5":
+            return
+        L = max(int(len(c)) for c in inputs)
+        need = patch_aligned_context(L)
+        if need != int(self.context_length):
+            _log.info(
+                "TimesFM recompile max_context %d -> %d (batch L=%d)",
+                self.context_length,
+                need,
+                L,
+            )
+            self.context_length = need
+            self._compile_2p5()
 
     @property
     def hidden_dim(self) -> int:
@@ -151,6 +182,7 @@ class TimesFMExpert(ExpertAdapter):
         inputs = [np.asarray(c, dtype=np.float32) for c in contexts]
 
         if self._api == "2p5":
+            self._ensure_context_for_batch(inputs)
             point, _ = self._model.forecast(horizon=int(horizon), inputs=inputs)
             fc = np.asarray(point)
         else:

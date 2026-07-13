@@ -15,6 +15,7 @@ import torch
 from torch.utils.data import Dataset
 
 from ..features.cache import FeatureCache
+from ..data.metrics import MASE_SENTINEL, sanitize_mase_array
 
 
 @dataclass
@@ -72,15 +73,14 @@ def combine_caches(caches: list[FeatureCache]) -> CombinedData:
         feats_all.append(np.nan_to_num(np.concatenate(parts, axis=0), nan=0.0, posinf=0.0, neginf=0.0))
         masks_all.append(np.concatenate(mparts, axis=0))
 
-    mase = np.concatenate([c.mase for c in caches], axis=0).astype(np.float32)
-    mase = np.nan_to_num(mase, nan=1e6, posinf=1e6, neginf=1e6)
+    mase = sanitize_mase_array(np.concatenate([c.mase for c in caches], axis=0))
     window_meta: list[dict] = []
     for c in caches:
         wm = c.window_meta or [{} for _ in range(c.N)]
         window_meta.extend(wm)
 
-    # Drop windows where every expert is a sentinel failure (all MASE == 1e6).
-    keep = ~np.all(mase >= 1e6 - 1, axis=1)
+    # Drop windows where every expert is a sentinel failure.
+    keep = ~np.all(mase >= MASE_SENTINEL - 1, axis=1)
     if not np.all(keep):
         n_drop = int((~keep).sum())
         # Imported lazily to avoid circular logs at module import time.

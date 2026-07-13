@@ -85,6 +85,18 @@ pip install git+https://github.com/SalesforceAIResearch/gift-eval.git
 bash scripts/run_l40s.sh
 ```
 
+### Paper-ready package (recommended after adapter fixes)
+
+Wipes **clean** feature caches (Chronos-2 median + TimesFM dynamic-context fixes),
+reuses contaminated caches, then runs main + Phase-0 contrast + 2 ablations + 3 seeds
+and writes booktabs under `results/paper/`:
+
+```bash
+git pull && source .venv/bin/activate && source .env && pip install -e . -q
+bash scripts/run_paper.sh --tmux    # or foreground without --tmux
+# later: hitf-export-tables --out results/paper
+```
+
 Or step by step:
 
 ```bash
@@ -95,7 +107,7 @@ hitf-synthetic --device cuda --out results/synthetic_regime_switch
 hitf-cache --config configs/experiments/gifteval_main_clean.yaml --device cuda
 
 # 2) Phase-0 go/no-go diagnostics
-hitf-diagnose feature_cache/gifteval_main_clean/*::train* \
+hitf-diagnose feature_cache/gifteval_main_clean/*_train \
   --out results/gifteval_main_clean/diagnostics.json
 
 # 3) full main table + ablationable runner
@@ -107,7 +119,7 @@ python -m hit_forecast.cli.run_all --config configs/experiments/gifteval_contami
 
 Outputs per experiment (`results/<name>/`): `metrics.csv`, `metrics.json`,
 `diagnostics.json`, `aggregates.json` (by domain/freq/term), `history.json`, and router
-checkpoints `hit_router.pt` / `pooled_router.pt`.
+checkpoints `hit_router.pt` / `pooled_router.pt`. Paper LaTeX: `results/paper/*.tex`.
 
 ## Experiments
 

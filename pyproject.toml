@@ -51,6 +51,7 @@ hitf-diagnose = "hit_forecast.cli.diagnostics:main"
 hitf-train = "hit_forecast.cli.train_router:main"
 hitf-eval = "hit_forecast.cli.evaluate:main"
 hitf-synthetic = "hit_forecast.cli.run_synthetic:main"
+hitf-export-tables = "hit_forecast.cli.export_tables:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -10,7 +10,7 @@ experts:
   - kind: chronos
     name: chronos-2
     model_id: amazon/chronos-2
-    dtype: bfloat16
+    dtype: float32                # GiftEval / Chronos-2 recommended dtype
     feature_source: stat          # encoder hook is version-fragile; stat is reliable
   - kind: moirai
     name: moirai-base
@@ -21,9 +21,11 @@ experts:
     name: timesfm-2.5
     model_id: google/timesfm-2.5-200m-pytorch
     feature_source: stat
-    context_length: 512
+    # Initial compile size; adapter recompiles to patch-aligned actual L per batch.
+    context_length: 128
     max_horizon: 256
     per_core_batch_size: 64
+    infer_is_positive: true
     stat_hidden: 128
   - kind: tirex
     name: tirex

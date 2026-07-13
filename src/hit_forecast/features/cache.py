@@ -23,7 +23,7 @@ from pathlib import Path
 import numpy as np
 from tqdm import tqdm
 
-from ..data.metrics import mase as _mase
+from ..data.metrics import MASE_SENTINEL, mase as _mase, sanitize_mase_array
 from ..data.windows import WindowSet
 from ..utils.logging import get_logger
 
@@ -84,25 +84,23 @@ def build_cache(
                 fc = np.asarray(o.forecast, dtype=np.float32).ravel()[:H]
                 if fc.shape[0] < H:
                     fc = np.pad(fc, (0, H - fc.shape[0]), mode="edge")
-                # Experts occasionally emit NaN/Inf on messy GiftEval series.
-                if not np.all(np.isfinite(fc)):
-                    finite = fc[np.isfinite(fc)]
-                    fill = float(finite[-1]) if finite.size else float(
-                        contexts[idx][-1] if np.isfinite(contexts[idx][-1]) else 0.0
-                    )
-                    fc = np.nan_to_num(fc, nan=fill, posinf=fill, neginf=fill)
                 patches = np.asarray(o.patches, dtype=np.float32)
                 patches = np.nan_to_num(patches, nan=0.0, posinf=0.0, neginf=0.0)
+                # Non-finite forecasts are failures — do not fill-and-score.
+                if not np.all(np.isfinite(fc)):
+                    forecasts[idx, k] = 0.0
+                    mase[idx, k] = MASE_SENTINEL
+                    feats[k].append(patches)
+                    continue
                 forecasts[idx, k] = fc
                 mase[idx, k] = _mase(targets[idx], fc, contexts[idx], int(ms[idx]))
                 feats[k].append(patches)
 
-    # Final sanitisation: no NaNs allowed into router training.
-    mase = np.nan_to_num(mase, nan=1e6, posinf=1e6, neginf=1e6).astype(np.float32)
+    mase = sanitize_mase_array(mase)
     forecasts = np.nan_to_num(forecasts, nan=0.0, posinf=0.0, neginf=0.0)
-    n_bad = int(np.any(~np.isfinite(mase), axis=1).sum())  # should be 0 now
-    if n_bad:
-        _log.warning("%d windows still had non-finite MASE after sanitisation", n_bad)
+    n_sent = int(np.any(mase >= MASE_SENTINEL - 1, axis=1).sum())
+    if n_sent:
+        _log.warning("%d/%d windows have at least one sentinel MASE failure", n_sent, N)
 
     meta = {
         "name": windowset.name,
@@ -198,7 +196,7 @@ def load_cache(cache_dir: str | Path) -> FeatureCache:
         lens.append(np.load(cache_dir / f"lens_{s}.npy"))
     wm_path = cache_dir / "window_meta.json"
     window_meta = json.loads(wm_path.read_text()) if wm_path.exists() else []
-    mase = np.nan_to_num(arrays["mase"], nan=1e6, posinf=1e6, neginf=1e6).astype(np.float32)
+    mase = sanitize_mase_array(arrays["mase"])
     forecasts = np.nan_to_num(arrays["forecasts"], nan=0.0, posinf=0.0, neginf=0.0)
     return FeatureCache(
         dir=cache_dir,
