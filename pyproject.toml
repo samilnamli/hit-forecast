@@ -35,7 +35,7 @@ experts = [
     "chronos-forecasting>=1.5",
     "uni2ts>=1.2",
     "timesfm[torch]>=1.2",
-    "tirex",
+    "tirex-ts",  # NOTE: NOT the unrelated PyPI package named `tirex`
     "huggingface_hub>=0.24",
     "safetensors>=0.4",
     "accelerate>=0.30",
