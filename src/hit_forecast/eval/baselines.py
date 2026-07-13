@@ -60,7 +60,7 @@ def all_baseline_forecasts(
     """Per-window forecasts ``(N, H)`` for every non-learned strategy + oracle."""
     rng = np.random.default_rng(seed)
     N, K = data.N, data.K
-    fc = data.forecasts
+    fc = np.nan_to_num(data.forecasts, nan=0.0, posinf=0.0, neginf=0.0)
     out: dict[str, np.ndarray] = {}
 
     for k, name in enumerate(data.expert_names):
@@ -70,13 +70,21 @@ def all_baseline_forecasts(
 
     if train_mase_mean is None:
         train_mase_mean = data.mase.mean(axis=0)
-    inv = 1.0 / np.clip(train_mase_mean, 1e-8, None)
+    train_mase_mean = np.nan_to_num(
+        np.asarray(train_mase_mean, dtype=np.float64), nan=1e6, posinf=1e6, neginf=1e6
+    )
+    train_mase_mean = np.clip(train_mase_mean, 1e-8, None)
+    inv = 1.0 / train_mase_mean
     w_ens = inv / inv.sum()
+    if not np.all(np.isfinite(w_ens)):
+        w_ens = np.ones(K, dtype=np.float64) / K
     out["ensemble:weighted"] = np.einsum("nkh,k->nh", fc, w_ens)
 
     # BMA-style weighting: softmax over negative mean MASE
     bma = np.exp(-(train_mase_mean - train_mase_mean.min()))
     bma = bma / bma.sum()
+    if not np.all(np.isfinite(bma)):
+        bma = np.ones(K, dtype=np.float64) / K
     out["ensemble:bma"] = np.einsum("nkh,k->nh", fc, bma)
 
     rand_idx = rng.integers(0, K, size=N)

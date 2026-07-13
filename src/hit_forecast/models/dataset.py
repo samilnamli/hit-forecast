@@ -69,22 +69,54 @@ def combine_caches(caches: list[FeatureCache]) -> CombinedData:
             parts.append(f)
             mask = np.arange(Tmax[k])[None, :] < c.lens[k][:, None]
             mparts.append(mask)
-        feats_all.append(np.concatenate(parts, axis=0))
+        feats_all.append(np.nan_to_num(np.concatenate(parts, axis=0), nan=0.0, posinf=0.0, neginf=0.0))
         masks_all.append(np.concatenate(mparts, axis=0))
 
     mase = np.concatenate([c.mase for c in caches], axis=0).astype(np.float32)
+    mase = np.nan_to_num(mase, nan=1e6, posinf=1e6, neginf=1e6)
     window_meta: list[dict] = []
     for c in caches:
         wm = c.window_meta or [{} for _ in range(c.N)]
         window_meta.extend(wm)
 
+    # Drop windows where every expert is a sentinel failure (all MASE == 1e6).
+    keep = ~np.all(mase >= 1e6 - 1, axis=1)
+    if not np.all(keep):
+        n_drop = int((~keep).sum())
+        # Imported lazily to avoid circular logs at module import time.
+        from ..utils.logging import get_logger
+
+        get_logger(__name__).warning(
+            "Dropping %d/%d windows with non-informative MASE labels", n_drop, mase.shape[0]
+        )
+        mase = mase[keep]
+        window_meta = [wm for wm, k in zip(window_meta, keep) if k]
+        feats_all = [f[keep] for f in feats_all]
+        masks_all = [m[keep] for m in masks_all]
+
     # forecasts/targets/contexts only concatenated if H (and L) match across shards
     same_H = len({c.forecasts.shape[2] for c in caches}) == 1
     same_L = len({c.contexts.shape[1] for c in caches}) == 1
-    forecasts = np.concatenate([c.forecasts for c in caches], 0) if same_H else np.empty(0)
-    targets = np.concatenate([c.targets for c in caches], 0) if same_H else None
-    contexts = np.concatenate([c.contexts for c in caches], 0) if same_L else None
+    if same_H:
+        forecasts = np.concatenate([c.forecasts for c in caches], 0)
+        forecasts = np.nan_to_num(forecasts, nan=0.0, posinf=0.0, neginf=0.0)
+        if not np.all(keep):
+            forecasts = forecasts[keep]
+        targets = np.concatenate([c.targets for c in caches], 0)
+        if not np.all(keep):
+            targets = targets[keep]
+    else:
+        forecasts = np.empty(0)
+        targets = None
+    if same_L:
+        contexts = np.concatenate([c.contexts for c in caches], 0)
+        if not np.all(keep):
+            contexts = contexts[keep]
+    else:
+        contexts = None
     m = np.concatenate([c.m for c in caches], 0)
+    if not np.all(keep):
+        m = m[keep]
 
     return CombinedData(
         feats=feats_all,

@@ -68,7 +68,7 @@ echo "== [1/5] Cache clean-pool features on GIFT-Eval =="
 hitf-cache --config configs/experiments/gifteval_main_clean.yaml --device "\$DEVICE"
 
 echo "== [2/5] Phase-0 diagnostics (go/no-go) =="
-mapfile -t TRAIN_CACHES < <(find feature_cache/gifteval_main_clean -maxdepth 1 -type d -name '*::train*' 2>/dev/null || true)
+mapfile -t TRAIN_CACHES < <(find feature_cache/gifteval_main_clean -maxdepth 1 -type d \\( -name '*_train' -o -name '*::train*' \\) 2>/dev/null || true)
 if ((\${#TRAIN_CACHES[@]})); then
   hitf-diagnose "\${TRAIN_CACHES[@]}" --out results/gifteval_main_clean/diagnostics.json || true
 else

@@ -80,7 +80,10 @@ def train_router(
         opt, lambda s: _lr_lambda(s, cfg.warmup_steps, total_steps)
     )
     use_amp = cfg.amp and "cuda" in str(device)
-    scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
+    try:
+        scaler = torch.amp.GradScaler("cuda", enabled=use_amp)
+    except Exception:
+        scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
 
     best_val = float("inf")
     best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
@@ -90,15 +93,19 @@ def train_router(
     for epoch in range(cfg.max_epochs):
         model.train()
         ep_loss = 0.0
+        n_seen = 0
         for feats, masks, mase, _ in dl:
-            feats = [f.to(device) for f in feats]
+            feats = [torch.nan_to_num(f.to(device)) for f in feats]
             masks = [m.to(device) for m in masks]
-            mase = mase.to(device)
+            mase = torch.nan_to_num(mase.to(device), nan=1e6, posinf=1e6, neginf=1e6)
             opt.zero_grad(set_to_none=True)
             with torch.autocast(device_type="cuda", enabled=use_amp):
                 logits = model(feats, masks)
                 losses = criterion(logits, mase)
                 loss = losses["total"]
+            if not torch.isfinite(loss):
+                _log.warning("Skipping non-finite loss batch")
+                continue
             scaler.scale(loss).backward()
             scaler.unscale_(opt)
             torch.nn.utils.clip_grad_norm_(model.parameters(), cfg.grad_clip)
@@ -106,9 +113,12 @@ def train_router(
             scaler.update()
             sched.step()
             ep_loss += float(loss.item()) * mase.shape[0]
-        ep_loss /= len(ds)
+            n_seen += mase.shape[0]
+        ep_loss /= max(1, n_seen)
 
         val_mase = _expected_mase(model, val_data, device, cfg.batch_size)
+        if not np.isfinite(val_mase):
+            val_mase = float("inf")
         history.append({"epoch": epoch, "train_loss": ep_loss, "val_expected_mase": val_mase})
         _log.info("epoch %d train_loss=%.4f val_E[MASE]=%.4f", epoch, ep_loss, val_mase)
 
