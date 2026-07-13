@@ -1,6 +1,9 @@
-# Main results (Exp 2): clean, diverse expert pool on GIFT-Eval.
-# All experts are tagged testdata_leakage = No on the GIFT-Eval leaderboard,
-# resolving the colleague's contamination + weak-signal failure mode.
+# Main results (Exp 2): clean, DIVERSE expert pool on GIFT-Eval.
+# Foundation models are all tagged testdata_leakage = No; the classical experts
+# (theta / seasonal-naive / damped-drift) are decorrelated from the deep models,
+# widening the per-window oracle gap so routing has real, learnable headroom.
+# feature_source: auto = try the model's own encoder hidden states, fall back to
+# rich stat patches; the cache also appends expert-specific forecast tokens.
 defaults: _gifteval_base.yaml
 
 name: gifteval_main_clean
@@ -11,11 +14,11 @@ experts:
     name: chronos-2
     model_id: amazon/chronos-2
     dtype: float32                # GiftEval / Chronos-2 recommended dtype
-    feature_source: stat          # encoder hook is version-fragile; stat is reliable
+    feature_source: auto          # encoder hook with rich-stat fallback
   - kind: moirai
     name: moirai-base
     model_id: Salesforce/moirai-1.1-R-base
-    feature_source: stat
+    feature_source: auto
     stat_hidden: 96
   - kind: timesfm
     name: timesfm-2.5
@@ -32,3 +35,12 @@ experts:
     model_id: NX-AI/TiRex
     feature_source: stat
     stat_hidden: 112
+  - kind: theta
+    name: theta
+    hidden: 64
+  - kind: snaive
+    name: snaive
+    hidden: 56
+  - kind: drift
+    name: drift
+    hidden: 48

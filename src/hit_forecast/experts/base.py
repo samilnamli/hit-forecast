@@ -19,6 +19,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from . import _features as F
+
 
 @dataclass
 class ExpertOutput:
@@ -50,6 +52,20 @@ class ExpertAdapter(ABC):
 
     def forecast_and_features(self, context: np.ndarray, horizon: int) -> ExpertOutput:
         return self.batch_forecast_and_features(context[None, :], horizon)[0]
+
+    def forecast_tokens(self, forecast: np.ndarray, context: np.ndarray) -> np.ndarray:
+        """Expert-specific tokens describing this expert's own forecast shape.
+
+        Appended to the patch sequence by the cache so the router receives a
+        distinct signal per expert even under the shared stat-feature fallback.
+        Shape ``(2, hidden_dim)``.
+        """
+        D = int(self.hidden_dim)
+        proj = getattr(self, "_fc_proj", None)
+        if proj is None or proj.shape[1] != D:
+            proj = F.make_forecast_proj(self.name, D)
+            self._fc_proj = proj
+        return F.forecast_summary_tokens(forecast, context, proj)
 
     # Adapters that need GPU setup can override; default is a no-op.
     def to(self, device: str) -> "ExpertAdapter":

@@ -40,6 +40,8 @@ class MoiraiExpert(ExpertAdapter):
         self._hidden = stat_hidden
         self._ctx_len = context_length
         self._encoder_ok = feature_source in ("auto", "encoder")
+        self._extractor = None
+        self._max_patches = 64
 
     def _lazy(self):
         if self._module is not None:
@@ -52,6 +54,16 @@ class MoiraiExpert(ExpertAdapter):
         )
         if d and self.feature_source != "stat":
             self._hidden = int(d)
+        if self._encoder_ok:
+            try:
+                self._extractor = F.HookedEncoderExtractor(
+                    ("encoder", "layers", "transformer")
+                ).attach(self._module)
+            except Exception as e:  # noqa: BLE001
+                if self.feature_source == "encoder":
+                    raise
+                F.warn_fallback(self.name, e)
+                self._encoder_ok = False
 
     @property
     def hidden_dim(self) -> int:
@@ -78,6 +90,7 @@ class MoiraiExpert(ExpertAdapter):
         ).to(self.device)
 
         outs = []
+        hidden = None
         with torch.no_grad():
             past = torch.tensor(contexts, dtype=torch.float32, device=self.device)
             past = past.unsqueeze(-1)  # (B, L, 1)
@@ -90,11 +103,21 @@ class MoiraiExpert(ExpertAdapter):
                     past_is_pad=is_pad,
                 )  # (B, num_samples, H)
                 fc = samples.median(dim=1).values.float().cpu().numpy()
+                if self._encoder_ok and self._extractor is not None:
+                    cap = self._extractor.pop(len(contexts))
+                    if cap is not None:
+                        hidden = cap.float().cpu().numpy()
+                        self._hidden = int(hidden.shape[-1])
             except Exception:
                 fc = np.stack([self._fallback_forecast(c, horizon) for c in contexts])
+                hidden = None
 
         for i, ctx in enumerate(contexts):
-            outs.append(ExpertOutput(forecast=fc[i][:horizon], patches=self._features(ctx)))
+            if hidden is not None:
+                patches = F.pool_tokens(hidden[i], self._max_patches)
+            else:
+                patches = F.stat_patches(ctx, self._stat_patch_len, self._proj)
+            outs.append(ExpertOutput(forecast=fc[i][:horizon], patches=patches))
         return outs
 
     @staticmethod
@@ -102,13 +125,3 @@ class MoiraiExpert(ExpertAdapter):
         m = min(24, ctx.size)
         reps = int(np.ceil(horizon / m))
         return np.tile(ctx[-m:], reps)[:horizon]
-
-    def _features(self, ctx):
-        # uni2ts encoder-state extraction is version-sensitive; use stat features
-        # by default and let users enable encoder mode after verifying on GPU.
-        if self.feature_source == "encoder":
-            raise NotImplementedError(
-                "Set feature_source=stat for Moirai unless you have wired the "
-                "MoiraiModule encoder hook for your uni2ts version."
-            )
-        return F.stat_patches(ctx, self._stat_patch_len, self._proj)

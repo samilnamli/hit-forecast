@@ -86,15 +86,29 @@ def build_cache(
                     fc = np.pad(fc, (0, H - fc.shape[0]), mode="edge")
                 patches = np.asarray(o.patches, dtype=np.float32)
                 patches = np.nan_to_num(patches, nan=0.0, posinf=0.0, neginf=0.0)
+                D = patches.shape[1]
+                finite_fc = bool(np.all(np.isfinite(fc)))
+                # Expert-specific forecast-conditioned tokens (zeros if failed).
+                if finite_fc:
+                    try:
+                        ftok = np.asarray(
+                            expert.forecast_tokens(fc, contexts[idx]), dtype=np.float32
+                        )
+                        ftok = np.nan_to_num(ftok, nan=0.0, posinf=0.0, neginf=0.0)
+                        if ftok.ndim != 2 or ftok.shape[1] != D:
+                            ftok = np.zeros((2, D), dtype=np.float32)
+                    except Exception:  # noqa: BLE001
+                        ftok = np.zeros((2, D), dtype=np.float32)
+                else:
+                    ftok = np.zeros((2, D), dtype=np.float32)
+                feats[k].append(np.concatenate([patches, ftok], axis=0))
                 # Non-finite forecasts are failures — do not fill-and-score.
-                if not np.all(np.isfinite(fc)):
+                if not finite_fc:
                     forecasts[idx, k] = 0.0
                     mase[idx, k] = MASE_SENTINEL
-                    feats[k].append(patches)
                     continue
                 forecasts[idx, k] = fc
                 mase[idx, k] = _mase(targets[idx], fc, contexts[idx], int(ms[idx]))
-                feats[k].append(patches)
 
     mase = sanitize_mase_array(mase)
     forecasts = np.nan_to_num(forecasts, nan=0.0, posinf=0.0, neginf=0.0)

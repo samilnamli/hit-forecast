@@ -136,6 +136,8 @@ class ChronosExpert(ExpertAdapter):
         self._pipe = None
         self._hidden = stat_hidden
         self._encoder_ok = feature_source in ("auto", "encoder")
+        self._extractor = None
+        self._max_patches = 64
 
     def _lazy(self):
         if self._pipe is not None:
@@ -148,10 +150,17 @@ class ChronosExpert(ExpertAdapter):
         self._pipe = BaseChronosPipeline.from_pretrained(
             self.model_id, device_map=self.device, torch_dtype=dt
         )
-        inner = getattr(self._pipe, "model", None)
-        cfg = getattr(getattr(inner, "config", None), "d_model", None)
-        if cfg and self.feature_source != "stat":
-            self._hidden = int(cfg)
+        if self._encoder_ok:
+            inner = getattr(self._pipe, "model", None)
+            try:
+                self._extractor = F.HookedEncoderExtractor(
+                    ("encoder", "backbone", "transformer")
+                ).attach(inner)
+            except Exception as e:  # noqa: BLE001
+                if self.feature_source == "encoder":
+                    raise
+                F.warn_fallback(self.name, e)
+                self._encoder_ok = False
 
     @property
     def hidden_dim(self) -> int:
@@ -163,39 +172,32 @@ class ChronosExpert(ExpertAdapter):
 
         contexts = np.asarray(contexts, dtype=np.float64)
         ctx_t = [torch.tensor(c, dtype=torch.float32) for c in contexts]
-        fc = extract_chronos_point_forecast(self._pipe, ctx_t, int(horizon))
 
-        outs = []
-        for i, ctx in enumerate(contexts):
-            patches = self._features(ctx)
-            outs.append(ExpertOutput(forecast=fc[i][:horizon], patches=patches))
-        return outs
-
-    def _features(self, ctx: np.ndarray) -> np.ndarray:
-        if self._encoder_ok:
+        hidden = None
+        if self._encoder_ok and self._extractor is not None:
             try:
-                return self._encoder_features(ctx)
+                fc = extract_chronos_point_forecast(self._pipe, ctx_t, int(horizon))
+                cap = self._extractor.pop(len(contexts))
+                if cap is not None:
+                    hidden = cap.float().cpu().numpy()
+                    self._hidden = int(hidden.shape[-1])
+                else:
+                    raise RuntimeError("hook capture shape mismatch")
             except Exception as e:  # noqa: BLE001
                 if self.feature_source == "encoder":
                     raise
                 F.warn_fallback(self.name, e)
                 self._encoder_ok = False
-        return F.stat_patches(ctx, self._stat_patch_len, self._proj)
+                hidden = None
+                fc = extract_chronos_point_forecast(self._pipe, ctx_t, int(horizon))
+        else:
+            fc = extract_chronos_point_forecast(self._pipe, ctx_t, int(horizon))
 
-    def _encoder_features(self, ctx: np.ndarray) -> np.ndarray:
-        """Last encoder hidden state of the tokenised context (T, D)."""
-        import torch
-
-        model = self._pipe.model
-        tok = getattr(self._pipe, "tokenizer", None)
-        with torch.no_grad():
-            ids = torch.tensor(ctx, dtype=torch.float32, device=self.device)[None, :]
-            if tok is not None and hasattr(tok, "context_input_transform"):
-                token_ids, attn, _ = tok.context_input_transform(ids)
-                enc = model.model.encoder(input_ids=token_ids.to(self.device),
-                                          attention_mask=attn.to(self.device))
-            else:  # patch/embedding models expose encoder differently
-                enc = model.encoder(inputs_embeds=ids.unsqueeze(-1))
-            h = enc.last_hidden_state[0]
-        self._hidden = int(h.shape[-1])
-        return h.float().cpu().numpy().astype(np.float32)
+        outs = []
+        for i, ctx in enumerate(contexts):
+            if hidden is not None:
+                patches = F.pool_tokens(hidden[i], self._max_patches)
+            else:
+                patches = F.stat_patches(ctx, self._stat_patch_len, self._proj)
+            outs.append(ExpertOutput(forecast=fc[i][:horizon], patches=patches))
+        return outs

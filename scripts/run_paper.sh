@@ -66,9 +66,10 @@ if [[ "$EXPORT_ONLY" -eq 1 ]]; then
   exit 0
 fi
 
-echo "== [0] Wipe clean-pool caches (Chronos-2 / TimesFM fixes require re-cache) =="
-rm -rf feature_cache/gifteval_main_clean feature_cache/gifteval_pilot
-# Keep contaminated caches; Chronos-T5/Bolt path was already usable.
+echo "== [0] Wipe caches: new diverse pool + expert-specific features require re-cache =="
+rm -rf feature_cache/gifteval_main_clean feature_cache/gifteval_pilot feature_cache/gifteval_contaminated
+# Both pools re-cache so clean vs contaminated use the identical feature pipeline
+# (encoder/rich-stat patches + forecast-conditioned tokens).
 
 echo "== [1] Synthetic sanity =="
 hitf-synthetic --device "\$DEVICE" --out results/synthetic_regime_switch
@@ -86,7 +87,13 @@ cp -f results/gifteval_main_clean/seed_0/diagnostics.json results/gifteval_main_
 cp -f results/gifteval_main_clean/seed_0/aggregates.json results/gifteval_main_clean/aggregates.json 2>/dev/null || true
 cp -f results/gifteval_main_clean/seed_0/history.json results/gifteval_main_clean/history.json 2>/dev/null || true
 
-echo "== [3] Phase-0 diagnose clean + contaminated =="
+echo "== [3] Contaminated contrast (re-cache with identical feature pipeline) =="
+python -m hit_forecast.cli.run_all \\
+  --config configs/experiments/gifteval_contaminated.yaml \\
+  --device "\$DEVICE" \\
+  --out results/gifteval_contaminated
+
+echo "== [4] Phase-0 diagnose clean + contaminated =="
 mapfile -t CLEAN_TRAIN < <(find feature_cache/gifteval_main_clean -maxdepth 1 -type d \\( -name '*_train' -o -name '*::train*' \\) 2>/dev/null || true)
 if ((\${#CLEAN_TRAIN[@]})); then
   hitf-diagnose "\${CLEAN_TRAIN[@]}" --out results/gifteval_main_clean/diagnostics.json
@@ -97,16 +104,6 @@ if ((\${#CONT_TRAIN[@]})); then
   hitf-diagnose "\${CONT_TRAIN[@]}" --out results/gifteval_contaminated/diagnostics.json
 else
   echo "No contaminated train caches; skipping contaminated diagnose."
-fi
-
-echo "== [4] Contaminated contrast (reuse caches if present) =="
-if [[ -d feature_cache/gifteval_contaminated ]]; then
-  python -m hit_forecast.cli.run_all \\
-    --config configs/experiments/gifteval_contaminated.yaml \\
-    --device "\$DEVICE" \\
-    --out results/gifteval_contaminated
-else
-  echo "WARNING: contaminated cache missing; skipping Exp 3."
 fi
 
 echo "== [5] Ablation: MASE-only loss =="
