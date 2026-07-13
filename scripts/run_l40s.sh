@@ -85,6 +85,7 @@ echo "== [5/5] Contamination contrast (old leaking pool) =="
 python -m hit_forecast.cli.run_all --config configs/experiments/gifteval_contaminated.yaml --device "\$DEVICE"
 
 echo "Done. See results/*/metrics.csv and results/*/diagnostics.json"
+echo "(Resume contamination only: python -m hit_forecast.cli.run_all --config configs/experiments/gifteval_contaminated.yaml --device \$DEVICE)"
 EOF
   chmod +x "$INNER"
 }

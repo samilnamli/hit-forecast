@@ -1,7 +1,11 @@
-# Contrast experiment (Exp 3): the OLD leaking pool (3/4 experts tagged
-# testdata_leakage = Yes) on the SAME GIFT-Eval configs. Compared against
-# gifteval_main_clean, this quantifies how contamination collapses the routing
-# signal (Phase-0 diagnostics) and inflates absolute metrics.
+# Contrast experiment (Exp 3): OLD leaking pool on the SAME GIFT-Eval configs.
+# Compared against gifteval_main_clean, this quantifies how contamination
+# collapses the routing signal (Phase-0) and inflates absolute metrics.
+#
+# Official GIFT-Eval leakage tags: Chronos / Chronos-Bolt / TimesFM-1.0|2.0 /
+# Lag-Llama = Yes; Moirai = No. Current PyPI `timesfm` only ships the 2.5
+# loader (which 404s on 1.0 weights), so we use a third Chronos leaker
+# instead of TimesFM-1.0 — still 3/4 contaminated vs 1 clean.
 defaults: _gifteval_base.yaml
 
 name: gifteval_contaminated
@@ -19,10 +23,11 @@ experts:
     dtype: bfloat16
     feature_source: stat
     stat_hidden: 96
-  - kind: timesfm
-    name: timesfm-1.0
-    model_id: google/timesfm-1.0-200m-pytorch   # leakage = Yes
-    feature_source: stat
+  - kind: chronos
+    name: chronos-t5-base
+    model_id: amazon/chronos-t5-base       # leakage = Yes (TimesFM-1.0 stand-in)
+    dtype: bfloat16
+    feature_source: auto
     stat_hidden: 128
   - kind: moirai
     name: moirai-base

@@ -54,6 +54,11 @@ class TimesFMExpert(ExpertAdapter):
         self._hidden = stat_hidden
         self._api = None  # "2p5" | "legacy"
 
+    def _wants_2p5(self) -> bool:
+        mid = (self.model_id or "").lower()
+        name = (self.name or "").lower()
+        return "2.5" in mid or "2p5" in mid or "2.5" in name
+
     def _lazy(self, horizon: int | None = None):
         if self._model is not None:
             # Re-compile if a longer horizon arrives than we planned for.
@@ -72,9 +77,8 @@ class TimesFMExpert(ExpertAdapter):
         if horizon is not None:
             self.max_horizon = max(self.max_horizon, int(horizon))
 
-        # --- TimesFM 2.5 path ---
-        if hasattr(timesfm, "TimesFM_2p5_200M_torch"):
-            kwargs = {}
+        # --- TimesFM 2.5 path (current PyPI timesfm) ---
+        if self._wants_2p5() and hasattr(timesfm, "TimesFM_2p5_200M_torch"):
             try:
                 self._model = timesfm.TimesFM_2p5_200M_torch.from_pretrained(
                     self.model_id, torch_compile=self.torch_compile
@@ -88,21 +92,38 @@ class TimesFMExpert(ExpertAdapter):
             _log.info("Loaded TimesFM 2.5 (%s) on %s", self.model_id, self.device)
             return
 
-        # --- Legacy TimesFM 1.x / 2.0 path ---
-        if hasattr(timesfm, "TimesFmHparams") and hasattr(timesfm, "TimesFm"):
+        # --- Legacy TimesFM 1.x / 2.0 (needs timesfm<=1.3 or v1 extra) ---
+        TimesFm = getattr(timesfm, "TimesFm", None)
+        TimesFmHparams = getattr(timesfm, "TimesFmHparams", None)
+        TimesFmCheckpoint = getattr(timesfm, "TimesFmCheckpoint", None)
+        if TimesFm is None:
+            try:
+                from timesfm import timesfm as _v1  # type: ignore
+
+                TimesFm = getattr(_v1, "TimesFm", None)
+                TimesFmHparams = getattr(_v1, "TimesFmHparams", None)
+                TimesFmCheckpoint = getattr(_v1, "TimesFmCheckpoint", None)
+            except Exception:
+                pass
+        if TimesFm is not None and TimesFmHparams is not None and TimesFmCheckpoint is not None:
             backend = "gpu" if "cuda" in str(self.device) else "cpu"
-            hp = timesfm.TimesFmHparams(
-                backend=backend, context_len=self.context_length
+            hp = TimesFmHparams(
+                backend=backend,
+                context_len=self.context_length,
+                horizon_len=max(int(self.max_horizon), 128),
             )
-            ckpt = timesfm.TimesFmCheckpoint(huggingface_repo_id=self.model_id)
-            self._model = timesfm.TimesFm(hparams=hp, checkpoint=ckpt)
+            ckpt = TimesFmCheckpoint(huggingface_repo_id=self.model_id)
+            self._model = TimesFm(hparams=hp, checkpoint=ckpt)
             self._api = "legacy"
             _log.info("Loaded legacy TimesFM (%s)", self.model_id)
             return
 
         raise ImportError(
-            "Installed `timesfm` package has neither TimesFM_2p5_200M_torch nor "
-            "TimesFmHparams. Upgrade: pip install -U 'timesfm[torch]'"
+            f"Cannot load TimesFM checkpoint '{self.model_id}'. "
+            "TimesFM 2.5 needs a current `timesfm[torch]` with TimesFM_2p5_200M_torch. "
+            "TimesFM 1.0/2.0 need the archived v1 API (`pip install 'timesfm==1.3.0'` "
+            "in a separate env, or swap the contaminated-pool expert). "
+            f"Detected wants_2p5={self._wants_2p5()}."
         )
 
     def _compile_2p5(self):
