@@ -35,7 +35,7 @@ def build_windowset(entry: dict) -> WindowSet:
             term=entry.get("term", "short"),
             split=entry.get("split", "test"),
             context_length=entry.get("context_length"),
-            to_univariate=entry.get("to_univariate", True),
+            to_univariate=entry.get("to_univariate", False),
             max_windows=entry.get("max_windows"),
             max_series=entry.get("max_series"),
         )
