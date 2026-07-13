@@ -9,8 +9,8 @@ dist/
 venv*/
 .env
 
-# Datasets, feature caches, checkpoints (never commit large blobs)
-data/
+# Downloaded datasets only (root-level). Do NOT ignore src/hit_forecast/data/.
+/data/
 **/feature_cache/
 *.arrow
 *.parquet
