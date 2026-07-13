@@ -36,6 +36,23 @@ run_pipeline() {
     # shellcheck disable=SC1091
     source "${ROOT}/.venv/bin/activate"
   fi
+  # Load GIFT_EVAL from .env (written by scripts/download_gifteval.sh).
+  if [[ -f "${ROOT}/.env" ]]; then
+    set -a
+    # shellcheck disable=SC1091
+    source "${ROOT}/.env"
+    set +a
+  fi
+  if [[ -z "${GIFT_EVAL:-}" && -d "${ROOT}/data/gifteval" ]]; then
+    export GIFT_EVAL="${ROOT}/data/gifteval"
+  fi
+  if [[ -z "${GIFT_EVAL:-}" ]]; then
+    echo "ERROR: GIFT_EVAL is unset. Download the data first:"
+    echo "  bash scripts/download_gifteval.sh"
+    echo "Then re-run this script (or: export GIFT_EVAL=\$PWD/data/gifteval)."
+    exit 1
+  fi
+  echo "Using GIFT_EVAL=$GIFT_EVAL"
 
   echo "== [0/5] Synthetic sanity (no downloads) =="
   hitf-synthetic --device "$DEVICE" --out results/synthetic_regime_switch

@@ -16,6 +16,7 @@ raise only when a loader function is actually called.
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import Iterable
 
 import numpy as np
@@ -74,16 +75,54 @@ def _season_for(freq: str, context_len: int) -> int:
     return max(1, min(base, max(1, context_len // 2)))
 
 
+def _ensure_gift_eval_env() -> str:
+    """Resolve and export ``GIFT_EVAL``; raise a clear error if missing."""
+    try:
+        from dotenv import load_dotenv
+
+        load_dotenv()  # picks up repo-root .env if present
+    except Exception:
+        pass
+
+    path = os.getenv("GIFT_EVAL")
+    if not path:
+        # Common defaults written by scripts/download_gifteval.sh
+        for candidate in (
+            Path.cwd() / "data" / "gifteval",
+            Path(__file__).resolve().parents[3] / "data" / "gifteval",
+        ):
+            if candidate.is_dir() and any(candidate.iterdir()):
+                path = str(candidate.resolve())
+                os.environ["GIFT_EVAL"] = path
+                break
+    if not path:
+        raise EnvironmentError(
+            "GIFT_EVAL is not set and no local data/gifteval/ was found.\n"
+            "Download the benchmark first:\n"
+            "  bash scripts/download_gifteval.sh\n"
+            "Then either `source .env` or:\n"
+            "  export GIFT_EVAL=$PWD/data/gifteval"
+        )
+    if not Path(path).is_dir():
+        raise EnvironmentError(
+            f"GIFT_EVAL={path!r} does not exist or is not a directory. "
+            "Re-run: bash scripts/download_gifteval.sh"
+        )
+    return path
+
+
 def _require_gift_eval():
+    _ensure_gift_eval_env()
     try:
         from gift_eval.data import Dataset, Term  # type: ignore
 
         return Dataset, Term
     except Exception as e:  # pragma: no cover - depends on optional install
         raise ImportError(
-            "gift_eval is not importable. Install the GIFT-Eval package "
-            "(`pip install -e .` inside SalesforceAIResearch/gift-eval) and set "
-            "the GIFT_EVAL env var to the downloaded dataset directory."
+            "gift_eval is not importable. Install with:\n"
+            "  pip install git+https://github.com/SalesforceAIResearch/gift-eval.git\n"
+            "and set GIFT_EVAL to the downloaded dataset directory "
+            "(bash scripts/download_gifteval.sh)."
         ) from e
 
 
