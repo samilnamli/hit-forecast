@@ -63,6 +63,17 @@ def build_cache(
     # collect variable patch sequences per expert
     feats: list[list[np.ndarray]] = [[] for _ in range(K)]
 
+    for k, expert in enumerate(experts):
+        try:
+            # Warm-up / compile on a tiny batch so API mismatches fail before the loop.
+            _ = expert.batch_forecast_and_features(contexts[:1].astype(np.float64), H)
+            _log.info("Expert ready: %s (D=%d)", expert.name, expert.hidden_dim)
+        except Exception as e:
+            raise RuntimeError(
+                f"Expert {expert.name!r} failed to initialize/forecast "
+                f"(horizon={H}). Check the adapter / package version. Root cause: {e}"
+            ) from e
+
     for start in tqdm(range(0, N, batch_size), desc=f"cache:{windowset.name}"):
         end = min(start + batch_size, N)
         ctx_batch = contexts[start:end].astype(np.float64)

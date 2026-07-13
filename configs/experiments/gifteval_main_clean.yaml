@@ -11,7 +11,7 @@ experts:
     name: chronos-2
     model_id: amazon/chronos-2
     dtype: bfloat16
-    feature_source: auto        # try frozen encoder states, fall back to stat patches
+    feature_source: stat          # encoder hook is version-fragile; stat is reliable
   - kind: moirai
     name: moirai-base
     model_id: Salesforce/moirai-1.1-R-base
@@ -21,6 +21,9 @@ experts:
     name: timesfm-2.5
     model_id: google/timesfm-2.5-200m-pytorch
     feature_source: stat
+    context_length: 512
+    max_horizon: 256
+    per_core_batch_size: 64
     stat_hidden: 128
   - kind: tirex
     name: tirex
