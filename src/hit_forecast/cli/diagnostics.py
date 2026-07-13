@@ -25,7 +25,9 @@ def main(argv=None):
     diag = signal_diagnostics(data.mase, data.expert_names)
     print(json.dumps(diag, indent=2))
     if args.out:
-        Path(args.out).write_text(json.dumps(diag, indent=2))
+        out = Path(args.out)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(diag, indent=2))
     if not diag["gate_pass"]:
         _log.warning("GATE FAILED: routing signal is weak for this pool/corpus. "
                      "Swap in more diverse / less contaminated experts before training.")
